@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemantauan Aktivitas Deforestasi Kab. Tapanuli Selatan</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+      href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+      rel="stylesheet"
+    />
+
+    <link 
+      href="'FP Deforestasi.css"
+      rel="stylesheet"
+    />
+
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+</head>
+
+<body class="bg-slate-50 overflow-hidden text-slate-900 leading-tight">
+
+    <!-- navbar -->
+    <nav class="h-20 bg-green-100 border-b border-slate-100 flex items-center justify-between px-8 z-30 relative">
+      <div class="flex items-center gap-4">
+        <div
+          class="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-green-100 transform -rotate-2"
+        >
+          <span class="text-green-900">W</span>
+          <span class="text-red-600">D</span>
+        </div>
+
+        <div>
+          <h1 class="text-lg font-extrabold tracking-tight">
+            WebGIS 
+            <span class="text-green-600">Pemantauan Aktivitas</span>
+            <span class="text-red-600">Deforestasi</span>
+          </h1>
+          <p class="text-[9px] font-bold text-black uppercase tracking-widest mt-0.5">
+            Pemantauan Aktivitas Deforestasi Kab. Tapanuli Selatan
+          </p>
+        </div>
+      </div>
+    </nav>
+
+    <!-- layout utama -->
+    <div class="flex" style="height: calc(100vh - 80px);">
+
+      <!-- sidebar -->
+      <aside
+        class="w-[350px] bg-green-800 border-r border-slate-100 overflow-y-auto p-6 flex-shrink-0 z-20 scrollbar-hide"
+      >
+        <div class="space-y-8 pb-20">
+
+          <!-- basemap -->
+          <section>
+            <h3 class="text-[10px] font-black text-black uppercase tracking-widest mb-4">
+              Pilihan Basemap
+            </h3>
+
+            <div class="flex flex-col gap-3">
+              <button
+                onclick="updateStyleToStreet()"
+                class="text-left px-5 py-3 rounded-2xl border-2 border-slate-50 bg-slate-50 text-slate-500 text-[11px] font-black"
+              >
+                Street
+              </button>
+
+              <button
+                onclick="updateStyleToSatellite()"
+                class="text-left px-5 py-3 rounded-2xl border-2 border-slate-50 bg-slate-50 text-slate-500 text-[11px] font-black"
+              >
+                Satellite
+              </button>
+            </div>
+          </section>
+
+          <!-- Admin Layer -->
+          <section class="mb-6">
+            <h3 class="text-[10px] font-black text-black uppercase tracking-widest mb-2">
+              Batas Administrasi
+            </h3>
+
+            <div class="flex flex-col gap-2">
+              <!-- tombol layer dengan ikon mata -->
+              <button id="btn-admin" data-label="Batas Administrasi"
+                onclick="toggleAdminLayer()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black text-left">
+                <span class="icon">👁️‍🗨️</span>
+                <span>Batas Administrasi</span>
+              </button>
+
+              <!-- kotak warna persegi panjang di bawah tombol -->
+              <input type="color"
+                onchange="gantiWarnaAdmin(this.value)"
+                value="#747876"
+                class="w-full h-10 border rounded cursor-pointer">
+            </div>
+          </section>
+
+          <!-- LULC data layer -->
+          <section class="mb-6">
+            <h3 class="text-[10px] font-black text-black uppercase tracking-widest mb-2">
+              Land Use/Land Cover 2018 - 2024
+            </h3>
+
+            <div class="flex flex-col gap-2">
+              <!-- tombol layer dengan ikon mata -->
+              <button id="btn-lulc" data-label="Batas Administrasi"
+                onclick="toggleLULCLayer()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black text-left">
+                <span class="icon">👁️‍🗨️</span>
+                <span>Land Use/Land Cover</span>
+              </button>
+
+              <!-- filter tahun -->
+              <select
+                id="filter-tahun"
+                onchange="gantiTahunLULC()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black"
+              >
+                <option value="2018">Tahun 2018</option>
+                <option value="2019">Tahun 2019</option>
+                <option value="2020">Tahun 2020</option>
+                <option value="2021">Tahun 2021</option>
+                <option value="2022">Tahun 2022</option>
+                <option value="2023">Tahun 2023</option>
+                <option value="2024">Tahun 2024</option>
+              </select>
+
+              <button onclick="playTimelineLULC()"
+                class="px-4 py-2 rounded-lg border bg-white text-slate-600 text-[11px] font-bold flex items-center gap-2">
+                ▶️
+                <span>Play Timeline</span>
+              </button>
+            
+          </div>
+          </section>
+
+          <!-- Deforestasi data layer -->
+          <section class="mb-6">
+            <h3 class="text-[10px] font-black text-black uppercase tracking-widest mb-2">
+              Deforestasi 2018 - 2024
+            </h3>
+
+            <div class="flex flex-col gap-2">
+              <!-- tombol layer dengan ikon mata -->
+              <button id="btn-def" data-label="Batas Administrasi"
+                onclick="toggleDeforestasiLayer()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black text-left">
+                <span class="icon">👁️‍🗨️</span>
+                <span>Deforestasi</span>
+              </button>
+
+              <!-- filter tahun deforestasi -->
+              <select id="filter-tahun-def"
+                onchange="gantiTahunDeforestasi()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black"
+              >
+                <option value="2018-2019">Tahun 2018 - 2019</option>
+                <option value="2020-2021">Tahun 2020 - 2021</option>
+                <option value="2022-2023">Tahun 2022 - 2023</option>
+                <option value="2024">Tahun 2024</option>
+              </select>
+              
+              <button onclick="playTimelineDeforestasi()"
+                class="px-4 py-2 rounded-lg border bg-white text-slate-600 text-[11px] font-bold flex items-center gap-2">
+                ▶️
+                <span>Play Timeline</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Deforestasi Heatmap -->
+          <section class="mb-6">
+            <h3 class="text-[10px] font-black text-black uppercase tracking-widest mb-2">
+              Deforestasi Heatmap 2018 - 2024
+            </h3>
+
+            <div class="flex flex-col gap-2">
+              <!-- tombol layer dengan ikon mata -->
+              <button id="btn-def-heat" data-label="Deforestasi Heatmap"
+                onclick="toggleDeforestasiHeatmap()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black text-left">
+                <span class="icon">👁️‍🗨️</span>
+                <span>Deforestasi (Heatmap)</span>
+              </button>
+
+              <!-- dropdown pilih tahun -->
+              <select id="filter-tahun-heat"
+                onchange="toggleDeforestasiHeatmap()"
+                class="px-5 py-3 rounded-2xl border border-slate-300 bg-slate-50 text-slate-600 text-[11px] font-black"
+              >
+                <option value="2018-2019">Tahun 2018 - 2019</option>
+                <option value="2020-2021">Tahun 2020 - 2021</option>
+                <option value="2022-2023">Tahun 2022 - 2023</option>
+                <option value="2024">Tahun 2024</option>
+              </select>
+            </div>
+          </section>
+
+                <!-- legend box -->
+                <div id="legend-box" class="absolute top-24 right-4 bg-yellow-500 p-4 rounded-lg shadow-md text-xs">
+                  <h3 id="legend-title" class="font-bold mb-2">Informasi Klasifikasi</h3>
+                  <div id="legend-content"></div>
+                </div>
+          </section>
+      </aside>
+
+      <!-- map area -->
+      <div class="flex-1 relative">
+        <div id="mapStreet" class="absolute inset-0"></div>
+        <div id="mapSatellite" class="absolute inset-0 hidden"></div>
+      </div>
+
+    </div>
+
+    <script src="FP Deforestasii.js"></script>
+</body>
+</html>
