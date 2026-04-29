@@ -55,6 +55,12 @@
             Pemantauan Aktivitas Deforestasi Kab. Tapanuli Selatan
           </p>
         </div>
+
+        <button 
+          class="lg:hidden text-green-900 font-bold" 
+          onclick="toggleSidebar()">
+          ☰
+        </button>
       </div>
     </nav>
 
@@ -62,8 +68,8 @@
     <div class="flex" style="height: calc(100vh - 80px);">
 
       <!-- sidebar -->
-      <aside
-        class="w-[350px] bg-green-800 border-r border-slate-100 overflow-y-auto p-6 flex-shrink-0 z-20 scrollbar-hide"
+      <aside id="sidebar"
+        class="w-[350px] bg-green-800 border-r border-slate-100 overflow-y-auto p-6 flex-shrink-0 z-20 scrollbar-hide hidden lg:block"
       >
         <div class="space-y-8 pb-20">
 
@@ -231,5 +237,12 @@
     </div>
 
     <script src="FP Deforestasii.js"></script>
+
+    <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('hidden');
+    }
+    </script>
 </body>
 </html>
